@@ -1,4 +1,5 @@
 import os
+import random
 from typing import List, Optional
 from fastapi import FastAPI, Request, Form, HTTPException, Header
 from fastapi.templating import Jinja2Templates
@@ -7,9 +8,18 @@ from fastapi.responses import HTMLResponse
 import httpx
 from pydantic import BaseModel
 import json
-from prompt_templates import THESIS_BRAINSTORM_PROMPT
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Thesis Statement Generator")
+
+# CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Change this to specific origins if needed
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Set up templates and static files
 templates = Jinja2Templates(directory="templates")
@@ -29,6 +39,20 @@ OLLAMA_HOST = "localhost"
 OLLAMA_PORT = "11434"
 OLLAMA_API_URL = f"http://{OLLAMA_HOST}:{OLLAMA_PORT}/api"
 
+# Define subfields for diversity
+SUBFIELDS = [
+    "Cybersecurity",
+    "Software Engineering",
+    "Databases",
+    "Networking",
+    "Cloud Computing",
+    "Blockchain Technology",
+    "Quantum Computing",
+    "Embedded Systems",
+    "Human-Computer Interaction",
+    "Algorithms & Complexity Theory"
+    "Artificial Intelligence"
+]
 
 class ThesisRequest(BaseModel):
     field_of_study: str
@@ -44,24 +68,22 @@ async def read_root(request: Request):
 
 @app.post("/generate")
 async def generate_thesis(
-        field_of_study: str = Form(...),
-        num_ideas: int = Form(3),
-        thesis_type: str = Form("argumentative"),
-        tone: str = Form("academic"),
         model: str = Form(DEFAULT_MODEL),
-        x_api_key: str = Header(None)  # API Key Header Authentication
+        x_api_key: str = Header(None)
 ):
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="Unauthorized: Invalid API Key")
 
     try:
-        # Build the prompt using the template
-        prompt = THESIS_BRAINSTORM_PROMPT.format(
-            field_of_study=field_of_study,
-            num_ideas=num_ideas,
-            thesis_type=thesis_type,
-            tone=tone
-        )
+        # Randomly select diverse subfields
+        selected_subfields = random.sample(SUBFIELDS, 3)
+
+        # Build the prompt
+        prompt = f"""
+        Generate 3 unique thesis ideas in the field of Computer Science. Each idea should focus on a different subfield from the following:
+        {', '.join(selected_subfields)}.
+        Ensure a theoretical approach with a formal tone.
+        """
 
         # 1️⃣ Attempt Open-WebUI API
         if WEBUI_ENABLED:
@@ -78,16 +100,9 @@ async def generate_thesis(
                         timeout=60.0
                     )
 
-                print(f"Open-WebUI API response status: {response.status_code}")
-
                 if response.status_code == 200:
                     result = response.json()
-                    generated_text = ""
-
-                    if "choices" in result and result["choices"]:
-                        choice = result["choices"][0]
-                        generated_text = choice.get("message", {}).get("content", "") or choice.get("text", "")
-
+                    generated_text = result["choices"][0].get("message", {}).get("content", "").strip()
                     if generated_text:
                         return {"generated_thesis": generated_text}
             except Exception as e:
@@ -95,22 +110,21 @@ async def generate_thesis(
 
         # 2️⃣ Fallback to Local Ollama API
         if OLLAMA_ENABLED:
-            print("Falling back to Ollama API")
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    f"{OLLAMA_API_URL}/generate",
-                    json={"model": model, "prompt": prompt, "stream": False},
-                    timeout=60.0
-                )
+            try:
+                print("Falling back to Ollama API")
+                async with httpx.AsyncClient() as client:
+                    response = await client.post(
+                        f"{OLLAMA_API_URL}/generate",
+                        json={"model": model, "prompt": prompt, "stream": False},
+                        timeout=60.0
+                    )
 
-            if response.status_code != 200:
-                raise HTTPException(status_code=500, detail="Failed to generate content from Ollama API")
+                if response.status_code == 200:
+                    result = response.json()
+                    return {"generated_thesis": result.get("response", "").strip()}
+            except Exception as e:
+                print(f"Ollama API attempt failed: {str(e)}")
 
-            result = response.json()
-            generated_text = result.get("response", "")
-            return {"generated_thesis": generated_text}
-
-        # ❌ If all attempts fail
         raise HTTPException(status_code=500, detail="Failed to generate thesis statements from any available LLM API")
 
     except Exception as e:
@@ -124,6 +138,8 @@ async def get_models(x_api_key: str = Header(None)):
         raise HTTPException(status_code=401, detail="Unauthorized: Invalid API Key")
 
     try:
+        models = []
+
         if WEBUI_ENABLED:
             try:
                 async with httpx.AsyncClient() as client:
@@ -133,28 +149,21 @@ async def get_models(x_api_key: str = Header(None)):
                     )
 
                 if response.status_code == 200:
-                    models_data = response.json()
-                    model_names = [model["id"] for model in models_data.get("data", []) if "id" in model]
-
-                    if model_names:
-                        return {"models": model_names}
+                    models = [model["id"] for model in response.json().get("data", []) if "id" in model]
             except Exception as e:
                 print(f"Error fetching models from Open-WebUI API: {str(e)}")
 
-        if OLLAMA_ENABLED:
+        if OLLAMA_ENABLED and not models:
             try:
                 async with httpx.AsyncClient() as client:
                     response = await client.get(f"{OLLAMA_API_URL}/tags")
 
                 if response.status_code == 200:
-                    models = response.json().get("models", [])
-                    model_names = [model.get("name") for model in models]
-                    return {"models": model_names}
+                    models = [model.get("name") for model in response.json().get("models", [])]
             except Exception as e:
                 print(f"Error fetching models from Ollama: {str(e)}")
 
-        fallback_models = [DEFAULT_MODEL, "gemma2:2b", "qwen2.5:0.5b", "deepseek-r1:1.5b", "deepseek-coder:latest"]
-        return {"models": fallback_models}
+        return {"models": models or [DEFAULT_MODEL, "gemma2:2b", "qwen2.5:0.5b", "deepseek-r1:1.5b", "deepseek-coder:latest"]}
 
     except Exception as e:
         print(f"Unexpected error in get_models: {str(e)}")
@@ -163,5 +172,4 @@ async def get_models(x_api_key: str = Header(None)):
 
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)

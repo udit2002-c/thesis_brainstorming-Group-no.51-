@@ -16,9 +16,8 @@
         <div class="form-container">
             <form id="thesisForm">
                 <div class="form-group">
-                    <label for="research_area">Research Area:</label>
-                    <input type="text" id="research_area" name="research_area" required
-                           placeholder="e.g., Artificial Intelligence, Environmental Science">
+                    <label for="field_of_study">Research Area:</label>
+                    <input type="text" id="field_of_study" name="field_of_study" required placeholder="e.g., Artificial Intelligence, Environmental Science">
                 </div>
 
                 <div class="form-group">
@@ -31,19 +30,21 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="approach">Preferred Research Approach:</label>
-                    <select id="approach" name="approach">
-                        <option value="theoretical" selected>Theoretical</option>
-                        <option value="experimental">Experimental</option>
-                        <option value="qualitative">Qualitative</option>
-                        <option value="quantitative">Quantitative</option>
+                    <label for="thesis_type">Thesis Type:</label>
+                    <select id="thesis_type" name="thesis_type">
+                        <option value="argumentative" selected>Argumentative</option>
+                        <option value="analytical">Analytical</option>
+                        <option value="expository">Expository</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="focus">Key Focus Points (Optional):</label>
-                    <input type="text" id="focus" name="focus"
-                           placeholder="e.g., Ethics in AI, Climate Change Mitigation">
+                    <label for="tone">Tone:</label>
+                    <select id="tone" name="tone">
+                        <option value="academic" selected>Academic</option>
+                        <option value="persuasive">Persuasive</option>
+                        <option value="neutral">Neutral</option>
+                    </select>
                 </div>
 
                 <button type="submit" id="generateBtn">Generate Thesis Ideas</button>
@@ -58,7 +59,7 @@
             <div id="results">
                 <!-- Thesis ideas will appear here -->
             </div>
-            <button id="copyBtn">Copy to Clipboard</button>
+            <button id="copyBtn" style="display: none;">Copy to Clipboard</button>
         </div>
     </div>
 
@@ -70,14 +71,17 @@
             const resultsContainer = document.getElementById('resultsContainer');
             const loading = document.getElementById('loading');
             const results = document.getElementById('results');
+            const copyBtn = document.getElementById('copyBtn');
 
             resultsContainer.style.display = 'block';
             loading.style.display = 'block';
             results.innerHTML = '';
+            copyBtn.style.display = 'none';
 
             try {
-                const response = await fetch('/generate_thesis', {
+                const response = await fetch('/generate', {
                     method: 'POST',
+                    headers: { 'x-api-key': 'sk-79659c72ae1f42d699a756602c83065b' }, // Ensure API key if required
                     body: formData
                 });
 
@@ -86,9 +90,16 @@
                 }
 
                 const data = await response.json();
-                results.innerHTML = formatIdeas(data.generated_theses);
+                console.log("API Response:", data); // Debugging
+
+                if (!data.generated_thesis) {
+                    throw new Error("Invalid API response: 'generated_thesis' not found.");
+                }
+
+                results.innerHTML = formatIdeas(data.generated_thesis);
+                copyBtn.style.display = 'block';
             } catch (error) {
-                results.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+                results.innerHTML = `<div class="error">${error.message}</div>`;
             } finally {
                 loading.style.display = 'none';
             }
@@ -97,12 +108,8 @@
         document.getElementById('copyBtn').addEventListener('click', () => {
             const results = document.getElementById('results').innerText;
             navigator.clipboard.writeText(results)
-                .then(() => {
-                    alert('Copied to clipboard!');
-                })
-                .catch(err => {
-                    console.error('Failed to copy: ', err);
-                });
+                .then(() => alert('Copied to clipboard!'))
+                .catch(err => console.error('Failed to copy: ', err));
         });
 
         function formatIdeas(text) {
