@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thesis Brainstorming Tool</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Thesis Brainstorming Tool</h1>
+            <p>Generate thesis statement ideas and research directions.</p>
+        </header>
+
+        <div class="form-container">
+            <form id="thesisForm">
+                <div class="form-group">
+                    <label for="research_area">Research Area:</label>
+                    <input type="text" id="research_area" name="research_area" required
+                           placeholder="e.g., Artificial Intelligence, Environmental Science">
+                </div>
+
+                <div class="form-group">
+                    <label for="num_ideas">Number of Thesis Ideas:</label>
+                    <select id="num_ideas" name="num_ideas">
+                        <option value="1">1</option>
+                        <option value="3" selected>3</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="approach">Preferred Research Approach:</label>
+                    <select id="approach" name="approach">
+                        <option value="theoretical" selected>Theoretical</option>
+                        <option value="experimental">Experimental</option>
+                        <option value="qualitative">Qualitative</option>
+                        <option value="quantitative">Quantitative</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="focus">Key Focus Points (Optional):</label>
+                    <input type="text" id="focus" name="focus"
+                           placeholder="e.g., Ethics in AI, Climate Change Mitigation">
+                </div>
+
+                <button type="submit" id="generateBtn">Generate Thesis Ideas</button>
+            </form>
+        </div>
+
+        <div class="results-container" id="resultsContainer" style="display: none;">
+            <h2>Generated Thesis Ideas</h2>
+            <div id="loading" style="display: none;">
+                <p>Generating ideas...</p>
+            </div>
+            <div id="results">
+                <!-- Thesis ideas will appear here -->
+            </div>
+            <button id="copyBtn">Copy to Clipboard</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('thesisForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const resultsContainer = document.getElementById('resultsContainer');
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+
+            resultsContainer.style.display = 'block';
+            loading.style.display = 'block';
+            results.innerHTML = '';
+
+            try {
+                const response = await fetch('/generate_thesis', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                results.innerHTML = formatIdeas(data.generated_theses);
+            } catch (error) {
+                results.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            const results = document.getElementById('results').innerText;
+            navigator.clipboard.writeText(results)
+                .then(() => {
+                    alert('Copied to clipboard!');
+                })
+                .catch(err => {
+                    console.error('Failed to copy: ', err);
+                });
+        });
+
+        function formatIdeas(text) {
+            return text.replace(/\n/g, '<br>');
+        }
+    </script>
+</body>
+</html>
