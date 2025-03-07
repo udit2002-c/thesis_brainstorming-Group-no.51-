@@ -4,117 +4,461 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thesis Brainstorming Tool</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Navbar styles */
+        .navbar {
+            background-color: #ffffff;
+            padding: 12px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .logo-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .logo-container {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+        }
+
+        .logo-container img {
+            height: 50px;
+            object-fit: contain;
+            transition: transform 0.2s ease;
+        }
+
+        .logo-container img:hover {
+            transform: scale(1.05);
+        }
+
+        /* Main content styles */
+        .main-container {
+            max-width: 800px;
+            margin: 30px auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .header {
+            text-align: center;
+            padding: 25px 20px;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: #0056b3;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .form-container {
+            padding: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #444;
+        }
+
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        select:focus {
+            border-color: #0056b3;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.1);
+        }
+
+        .select-group {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .select-group {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #0056b3;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #004494;
+        }
+
+        button:disabled {
+            background: #7aa7d5;
+            cursor: not-allowed;
+        }
+
+        /* Results styles */
+        .results-container {
+            margin-top: 25px;
+            padding: 0 25px 25px;
+        }
+
+        .results-header {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #0056b3;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .results-content {
+            background-color: #f8f9fa;
+            border: 1px solid #eaeaea;
+            border-radius: 6px;
+            padding: 20px;
+            white-space: pre-wrap;
+            line-height: 1.7;
+        }
+
+        .copy-btn {
+            display: inline-flex;
+            align-items: center;
+            margin-top: 15px;
+            padding: 8px 16px;
+            background: #f1f1f1;
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #e5e5e5;
+        }
+
+        .copy-btn svg {
+            margin-right: 8px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .thesis-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .thesis-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+          .footer {
+            background-color: #f8f9fa;
+            border-top: 1px solid #eaeaea;
+            padding: 15px 0;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            margin-top: 30px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .footer-text {
+            font-weight: 600;
+        }
+
+        .footer-text span {
+            color: #0056b3;
+        }
+
+        /* Adjust main container to account for footer */
+        .main-container {
+            min-height: calc(100vh - 180px); /* Subtracting approx. header + footer height */
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Thesis Brainstorming Tool</h1>
-            <p>Generate thesis statement ideas and research directions.</p>
-        </header>
-
-        <div class="form-container">
-            <form id="thesisForm">
-                <div class="form-group">
-                    <label for="field_of_study">Research Area:</label>
-                    <input type="text" id="field_of_study" name="field_of_study" required placeholder="e.g., Artificial Intelligence, Environmental Science">
-                </div>
-
-                <div class="form-group">
-                    <label for="num_ideas">Number of Thesis Ideas:</label>
-                    <select id="num_ideas" name="num_ideas">
-                        <option value="1">1</option>
-                        <option value="3" selected>3</option>
-                        <option value="5">5</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="thesis_type">Thesis Type:</label>
-                    <select id="thesis_type" name="thesis_type">
-                        <option value="argumentative" selected>Argumentative</option>
-                        <option value="analytical">Analytical</option>
-                        <option value="expository">Expository</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="tone">Tone:</label>
-                    <select id="tone" name="tone">
-                        <option value="academic" selected>Academic</option>
-                        <option value="persuasive">Persuasive</option>
-                        <option value="neutral">Neutral</option>
-                    </select>
-                </div>
-
-                <button type="submit" id="generateBtn">Generate Thesis Ideas</button>
-            </form>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo-container">
+                <img src="static/IVIS_logo.png" alt="IVIS Labs">
+                <img src="static/NIE_University.png" alt="NIE University">
+                <img src="static/PULSE_logo.png" alt="PULSE">
+            </div>
         </div>
+    </nav>
 
-        <div class="results-container" id="resultsContainer" style="display: none;">
-            <h2>Generated Thesis Ideas</h2>
-            <div id="loading" style="display: none;">
-                <p>Generating ideas...</p>
+    <div class="container">
+        <div class="main-container">
+            <header class="header">
+                <h1>Thesis Brainstorming Tool</h1>
+                <p>Generate thesis statement ideas and research directions for your academic projects</p>
+            </header>
+
+            <div class="form-container">
+                <form id="thesisForm">
+                    <div class="form-group">
+                        <label for="field_of_study">Research Area</label>
+                        <input
+                            type="text"
+                            id="field_of_study"
+                            name="field_of_study"
+                            required
+                            placeholder="e.g., Artificial Intelligence, Environmental Science"
+                        >
+                    </div>
+
+                    <div class="select-group">
+                        <div class="form-group">
+                            <label for="num_ideas">Number of Ideas</label>
+                            <select id="num_ideas" name="num_ideas">
+                                <option value="1">1</option>
+                                <option value="3" selected>3</option>
+                                <option value="5">5</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="thesis_type">Thesis Type</label>
+                            <select id="thesis_type" name="thesis_type">
+                                <option value="argumentative" selected>Argumentative</option>
+                                <option value="analytical">Analytical</option>
+                                <option value="expository">Expository</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tone">Tone</label>
+                            <select id="tone" name="tone">
+                                <option value="academic" selected>Academic</option>
+                                <option value="persuasive">Persuasive</option>
+                                <option value="neutral">Neutral</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="generateBtn">Generate Thesis Ideas</button>
+                </form>
             </div>
-            <div id="results">
-                <!-- Thesis ideas will appear here -->
+
+            <div class="results-container hidden" id="resultsContainer">
+                <h2 class="results-header">Generated Thesis Ideas</h2>
+
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                </div>
+
+                <div id="results" class="results-content hidden"></div>
+
+                <button id="copyBtn" class="copy-btn hidden">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    Copy to Clipboard
+                </button>
             </div>
-            <button id="copyBtn" style="display: none;">Copy to Clipboard</button>
         </div>
     </div>
-
+<footer class="footer">
+        <div class="footer-content">
+            <p class="footer-text">Powered by <span>IVIS Labs</span></p>
+        </div>
+    </footer>
     <script>
-        document.getElementById('thesisForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const formData = new FormData(e.target);
+        document.addEventListener('DOMContentLoaded', function() {
+            const thesisForm = document.getElementById('thesisForm');
+            const generateBtn = document.getElementById('generateBtn');
             const resultsContainer = document.getElementById('resultsContainer');
             const loading = document.getElementById('loading');
             const results = document.getElementById('results');
             const copyBtn = document.getElementById('copyBtn');
 
-            resultsContainer.style.display = 'block';
-            loading.style.display = 'block';
-            results.innerHTML = '';
-            copyBtn.style.display = 'none';
+            // Handle form submission
+            thesisForm.addEventListener('submit', function(e) {
+                e.preventDefault();
 
-            try {
-                const response = await fetch('/generate', {
-                    method: 'POST',
-                    headers: { 'x-api-key': 'sk-79659c72ae1f42d699a756602c83065b' }, // Ensure API key if required
-                    body: formData
-                });
+                // Get form data
+                const formData = new FormData(thesisForm);
+                const fieldOfStudy = formData.get('field_of_study');
+                const numIdeas = formData.get('num_ideas');
+                const thesisType = formData.get('thesis_type');
+                const tone = formData.get('tone');
 
-                if (!response.ok) {
-                    throw new Error(`Error: ${response.statusText}`);
-                }
+                // Show loading state
+                resultsContainer.classList.remove('hidden');
+                loading.classList.remove('hidden');
+                results.classList.add('hidden');
+                copyBtn.classList.add('hidden');
+                generateBtn.disabled = true;
+                generateBtn.textContent = 'Generating Ideas...';
 
-                const data = await response.json();
-                console.log("API Response:", data); // Debugging
+                // Simulate API call (replace with actual API call in production)
+                setTimeout(function() {
+                    const generatedThesis = generateSampleResults({
+                        field_of_study: fieldOfStudy,
+                        num_ideas: numIdeas,
+                        thesis_type: thesisType,
+                        tone: tone
+                    });
 
-                if (!data.generated_thesis) {
-                    throw new Error("Invalid API response: 'generated_thesis' not found.");
-                }
+                    // Display results
+                    displayResults(generatedThesis);
 
-                results.innerHTML = formatIdeas(data.generated_thesis);
-                copyBtn.style.display = 'block';
-            } catch (error) {
-                results.innerHTML = `<div class="error">${error.message}</div>`;
-            } finally {
-                loading.style.display = 'none';
+                    // Reset button state
+                    generateBtn.disabled = false;
+                    generateBtn.textContent = 'Generate Thesis Ideas';
+                }, 1500);
+            });
+
+            // Copy to clipboard functionality
+            copyBtn.addEventListener('click', function() {
+                const textToCopy = results.textContent;
+                navigator.clipboard.writeText(textToCopy)
+                    .then(() => {
+                        const originalText = copyBtn.innerHTML;
+                        copyBtn.innerHTML = `
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 6L9 17l-5-5"></path>
+                            </svg>
+                            Copied!
+                        `;
+                        setTimeout(() => {
+                            copyBtn.innerHTML = originalText;
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy: ', err);
+                        alert('Failed to copy to clipboard');
+                    });
+            });
+
+            // Function to display results
+            function displayResults(text) {
+                // Hide loading, show results
+                loading.classList.add('hidden');
+                results.classList.remove('hidden');
+                copyBtn.classList.remove('hidden');
+
+                // Format and display the results
+                const formattedHtml = formatThesisIdeas(text);
+                results.innerHTML = formattedHtml;
+            }
+
+            // Function to format thesis ideas with HTML
+            function formatThesisIdeas(text) {
+                const ideas = text.split('\n\n');
+                return ideas.map(idea => `<div class="thesis-item">${idea}</div>`).join('');
+            }
+
+            // Function to generate sample results (replace with actual API response in production)
+            function generateSampleResults(formData) {
+                const field = formData.field_of_study || "Computer Science";
+                const type = formData.thesis_type;
+                const tone = formData.tone;
+                const numIdeas = parseInt(formData.num_ideas);
+
+                const ideas = [
+                    `1. Exploring the Impact of ${field} on Sustainable Development: A ${capitalizeFirstLetter(type)} Analysis`,
+                    `2. The Evolution of ${field} Methodologies: Implications for Future Research and Practice`,
+                    `3. Bridging Theory and Practice in ${field}: A ${capitalizeFirstLetter(tone)} Perspective`,
+                    `4. Ethical Considerations in ${field}: Balancing Innovation and Responsibility`,
+                    `5. Comparative Analysis of ${field} Approaches: Identifying Best Practices for Educational Settings`
+                ];
+
+                return ideas.slice(0, numIdeas).join('\n\n');
+            }
+
+            // Helper function to capitalize first letter
+            function capitalizeFirstLetter(string) {
+                return string.charAt(0).toUpperCase() + string.slice(1);
             }
         });
-
-        document.getElementById('copyBtn').addEventListener('click', () => {
-            const results = document.getElementById('results').innerText;
-            navigator.clipboard.writeText(results)
-                .then(() => alert('Copied to clipboard!'))
-                .catch(err => console.error('Failed to copy: ', err));
-        });
-
-        function formatIdeas(text) {
-            return text.replace(/\n/g, '<br>');
-        }
     </script>
 </body>
 </html>
