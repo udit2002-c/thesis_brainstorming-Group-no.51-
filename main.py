@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request, Form, HTTPException, status
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from prompt_templates import get_prompt_template, generate_mock_ideas
 from dotenv import load_dotenv
@@ -55,6 +56,9 @@ if os.getenv('VERCEL'):
 static_directory = os.path.join(os.path.dirname(__file__), "static")
 templates_directory = os.path.join(os.path.dirname(__file__), "templates")
 templates = Jinja2Templates(directory=templates_directory)
+
+# Mount static files (required for url_for to work)
+app.mount("/static", StaticFiles(directory=static_directory), name="static")
 
 # Configuration
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
