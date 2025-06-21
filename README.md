@@ -86,9 +86,6 @@ Open your browser and go to:
 
 > **✅ Works without API key too!** The app includes an intelligent fallback system, so it works perfectly even without the API key. But with Groq API, you get lightning-fast, high-quality AI-generated thesis ideas!
 
-## 📽️ Video Demo
-[Watch the demo here](https://drive.google.com/drive/folders/15QZQBIpYqZW7dUDS-qeVQpf7vjm0g2mD?usp=sharing)
-
 ## 🔑 API Endpoints
 | Method | Endpoint             | Description                   |
 |--------|---------------------|-------------------------------|
