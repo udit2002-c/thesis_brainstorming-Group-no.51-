@@ -177,7 +177,7 @@ The application supports multiple AI providers:
 
 3. **CORS Errors**
    ```
-   Solution: Add your domain to ALLOWED_ORIGINS environment variable
+   Solution: Add your domain to ALLOWED_ORIGINS environment variable.
    ```
 
 4. **Static Files Not Loading**
