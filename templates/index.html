@@ -400,15 +400,33 @@
 
                 if (!response.ok) {
                     let errorMessage;
+                    let isRateLimit = false;
+                    
                     try {
                         const errorData = await response.json();
                         console.error('Server error response:', errorData);
-                        errorMessage = errorData.detail || `Error: ${response.status} ${response.statusText}`;
+                        
+                        if (response.status === 429) {
+                            isRateLimit = true;
+                            errorMessage = "Rate limit exceeded. Please wait a moment and try again.";
+                        } else {
+                            errorMessage = errorData.detail || `Error: ${response.status} ${response.statusText}`;
+                        }
                     } catch (e) {
                         console.error('Could not parse error response');
-                        errorMessage = `Error: ${response.status} ${response.statusText}`;
+                        if (response.status === 429) {
+                            isRateLimit = true;
+                            errorMessage = "Rate limit exceeded. Please wait a moment and try again.";
+                        } else {
+                            errorMessage = `Error: ${response.status} ${response.statusText}`;
+                        }
                     }
-                    throw new Error(errorMessage);
+                    
+                    if (isRateLimit) {
+                        throw new Error(errorMessage);
+                    } else {
+                        throw new Error(errorMessage);
+                    }
                 }
 
                 const data = await response.json();
@@ -420,17 +438,37 @@
                 copyBtn.style.display = 'inline-block';
                 regenerateBtn.style.display = 'inline-block';
             } catch (error) {
-                results.innerHTML = `
+                let errorHtml = `
                     <div class="error">
                         <p><i class="fas fa-exclamation-triangle"></i> ${error.message}</p>
+                `;
+                
+                if (error.message.includes("Rate limit")) {
+                    errorHtml += `
+                        <p><strong>Rate Limit Solutions:</strong></p>
+                        <ul>
+                            <li>Wait 30-60 seconds before trying again</li>
+                            <li>Try generating fewer ideas at once</li>
+                            <li>Refresh the page and try again</li>
+                        </ul>
+                    `;
+                    // Add retry button after a short delay
+                    setTimeout(() => {
+                        addRetryButton();
+                    }, 100);
+                } else {
+                    errorHtml += `
                         <p>Possible solutions:</p>
                         <ul>
                             <li>Check your internet connection</li>
                             <li>Verify that the language model services are running</li>
                             <li>Try refreshing the page and generating again</li>
                         </ul>
-                    </div>
-                `;
+                    `;
+                }
+                
+                errorHtml += `</div>`;
+                results.innerHTML = errorHtml;
             } finally {
                 loading.style.display = 'none';
                 generateBtn.disabled = false;
@@ -454,6 +492,33 @@
         document.getElementById('regenerateBtn').addEventListener('click', () => {
             document.getElementById('thesisForm').dispatchEvent(new Event('submit'));
         });
+
+        // Add retry functionality for rate limit errors
+        function addRetryButton() {
+            const results = document.getElementById('results');
+            const retryBtn = document.createElement('button');
+            retryBtn.innerHTML = '<i class="fas fa-redo"></i> Retry in 30 seconds';
+            retryBtn.style.cssText = `
+                background: linear-gradient(135deg, #8B4513, #A0522D);
+                color: white;
+                border: none;
+                padding: 0.8rem 1.5rem;
+                border-radius: 10px;
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                margin-top: 1rem;
+                transition: all 0.3s ease;
+            `;
+            
+            retryBtn.addEventListener('click', () => {
+                setTimeout(() => {
+                    document.getElementById('thesisForm').dispatchEvent(new Event('submit'));
+                }, 30000);
+            });
+            
+            results.appendChild(retryBtn);
+        }
 
         function formatThesisIdeas(text) {
             // Check if text is actually a string
